@@ -123,7 +123,8 @@ bool dialogTestMode = false;
 
 #define LANG_FILE   wxT("pgadmin3.lng")
 
-IMPLEMENT_APP(pgAdmin3)
+//IMPLEMENT_APP(pgAdmin3)
+wxIMPLEMENT_APP(pgAdmin3);
 
 #ifdef __WXMSW__
 // Dynamically loaded EDB functions

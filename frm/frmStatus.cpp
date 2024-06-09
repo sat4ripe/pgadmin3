@@ -1809,7 +1809,10 @@ void frmStatus::OnRefreshStatusTimer(wxTimerEvent &event)
 					else
 					{
 						wxString av_replica;
-						if (iswalsend) av_replica= dataSet1->GetVal(wxT("av_replica"));
+						if (connection->BackendMinimumVersion(13, 0))
+						{
+							if (iswalsend) av_replica = dataSet1->GetVal(wxT("av_replica"));
+						}
 						if (av_replica.IsEmpty())
 							statusList->SetItem(row, colpos++, dataSet1->GetVal(wxT("backend_xmin")));
 						else

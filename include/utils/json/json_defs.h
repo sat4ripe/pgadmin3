@@ -70,7 +70,9 @@
 #endif
 // do not modify the following lines
 #if wxUSE_UNICODE == 1
-#define wxJSON_USE_UNICODE
+  #ifndef wxJSON_USE_UNICODE
+  #define wxJSON_USE_UNICODE
+  #endif
 #endif
 
 // the following macro, if defined, cause the wxJSONValue to store

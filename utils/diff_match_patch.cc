@@ -102,7 +102,7 @@ int64_t AsInt64(const std::wstring &str) {
 
 std::size_t AsSizeT(const std::wstring &str) {
   std::size_t res;
-  if (swscanf(str.c_str(), L"%lu", &res) != 1) {
+  if (swscanf(str.c_str(), L"%zu", &res) != 1) {
     UnicodeEncoder unicode_encoder;
     throw "Not a size_t: " + unicode_encoder.to_bytes(str);
   }
@@ -152,12 +152,12 @@ std::wstring URLDecode(const std::wstring &text) {
   const auto &unicode = unicode_encoder.to_bytes(text);
   std::stringstream res;
   auto it = unicode.begin();
-  auto current = it;
-  auto next = (it != unicode.end()) ? ++it : unicode.end();
-  auto nextnext = (it != unicode.end()) ? ++it : unicode.end();
+  auto &current = it;
+  auto &next = (it != unicode.end()) ? ++it : unicode.end();
+  auto &nextnext = (it != unicode.end()) ? ++it : unicode.end();
   for (; nextnext != unicode.end();) {
     if ((*current == '%') && (isxdigit(*next) && isxdigit(*nextnext))) {
-      auto end = nextnext;
+      auto &end = nextnext;
       std::string hex(next, ++end);
       uint32_t c;
       sscanf(hex.c_str(), "%x", &c);
@@ -336,6 +336,10 @@ std::list<Diff> diff_match_patch::diff_main(const std::wstring &text1,
   return diffs;
 }
 
+#if defined(DELETE)
+#undef DELETE
+#endif // DUMMYSTRUCTNAME
+
 std::list<Diff> diff_match_patch::diff_compute(std::wstring text1,
                                                std::wstring text2,
                                                bool checklines,
@@ -444,7 +448,7 @@ std::list<Diff> diff_match_patch::diff_lineMode(std::wstring text1,
         // Upon reaching an equality, check for prior redundancies.
         if (count_delete >= 1 && count_insert >= 1) {
           // Delete the offending records and add the merged ones.
-          auto it = thisDiff;
+          auto &it = thisDiff;
           for (std::size_t j = 0; j < count_delete + count_insert; j++) {
             --it;
             it = diffs.erase(it);
@@ -855,7 +859,7 @@ void diff_match_patch::diff_cleanupSemantic(std::list<Diff> &diffs) {
         // Replace equality with a delete.
         *thisDiff = Diff(DELETE, last_equality);
         // Insert a corresponding an insert.
-        auto it = thisDiff;
+        auto &it = thisDiff;
         ++it;
         diffs.insert(it, Diff(INSERT, last_equality));
 
@@ -895,8 +899,8 @@ void diff_match_patch::diff_cleanupSemantic(std::list<Diff> &diffs) {
   // e.g: <del>xxxabc</del><ins>defxxx</ins>
   //   -> <ins>def</ins>xxx<del>abc</del>
   // Only extract an overlap if it is as big as the edit ahead or behind it.
-  auto thisDiff = diffs.begin();
-  auto prevDiff = (thisDiff != diffs.end()) ? thisDiff++ : diffs.end();
+  auto &thisDiff = diffs.begin();
+  auto &prevDiff = (thisDiff != diffs.end()) ? thisDiff++ : diffs.end();
   while (thisDiff != diffs.end()) {
     if (prevDiff->operation == DELETE && thisDiff->operation == INSERT) {
       std::wstring deletion = prevDiff->text;
@@ -945,9 +949,9 @@ void diff_match_patch::diff_cleanupSemanticLossless(std::list<Diff> &diffs) {
   std::wstring bestEquality1, bestEdit, bestEquality2;
   // Create a new iterator at the start.
   auto ptr = diffs.begin();
-  auto prevDiff = ptr;
-  auto thisDiff = (ptr != diffs.end()) ? ++ptr : ptr;
-  auto nextDiff = (ptr != diffs.end()) ? ++ptr : ptr;
+  auto &prevDiff = ptr;
+  auto &thisDiff = (ptr != diffs.end()) ? ++ptr : ptr;
+  auto &nextDiff = (ptr != diffs.end()) ? ++ptr : ptr;
 
   // Intentionally ignore the first and last element (don't need checking).
   while (nextDiff != diffs.end()) {
@@ -1073,8 +1077,8 @@ void diff_match_patch::diff_cleanupEfficiency(std::list<Diff> &diffs) {
   // Is there a deletion operation after the last equality.
   bool post_del = false;
 
-  auto thisDiff = diffs.begin();
-  auto safeDiff = thisDiff;
+  auto &thisDiff = diffs.begin();
+  auto &safeDiff = thisDiff;
 
   while (thisDiff != diffs.end()) {
     if (thisDiff->operation == EQUAL) {
@@ -1121,7 +1125,7 @@ void diff_match_patch::diff_cleanupEfficiency(std::list<Diff> &diffs) {
         // Replace equality with a delete.
         *thisDiff = Diff(DELETE, last_equality);
         // Insert a corresponding an insert.
-        auto it = thisDiff;
+        auto &it = thisDiff;
         ++it;
         thisDiff = diffs.insert(it, Diff(INSERT, last_equality));
 
@@ -1185,7 +1189,7 @@ void diff_match_patch::diff_cleanupMerge(std::list<Diff> &diffs) {
         if (count_delete + count_insert > 1) {
           bool both_types = count_delete != 0 && count_insert != 0;
           // Delete the offending records.
-          auto it = thisDiff;
+          auto &it = thisDiff;
           while (count_delete-- > 0) {
             --it;
             it = diffs.erase(it);
@@ -1257,9 +1261,9 @@ void diff_match_patch::diff_cleanupMerge(std::list<Diff> &diffs) {
   bool changes = false;
   // Create a new iterator at the start.
   // (As opposed to walking the current one back.)
-  auto thisDiff = diffs.begin();
-  auto prevDiff = (thisDiff != diffs.end()) ? thisDiff++ : diffs.end();
-  auto nextDiff = thisDiff;
+  auto &thisDiff = diffs.begin();
+  auto &prevDiff = (thisDiff != diffs.end()) ? thisDiff++ : diffs.end();
+  auto &nextDiff = thisDiff;
   if (nextDiff != diffs.end()) ++nextDiff;
 
   // Intentionally ignore the first and last element (don't need checking).
@@ -1556,7 +1560,7 @@ std::size_t diff_match_patch::match_bitap(const std::wstring &text,
   }
 
   // Initialise the bit arrays.
-  std::size_t matchmask = 1 << (pattern.size() - 1);
+  std::size_t matchmask = ( 1 << ( pattern.size() - 1 ) );
   best_loc = std::wstring::npos;
 
   std::size_t bin_min, bin_mid;
@@ -1642,7 +1646,7 @@ double diff_match_patch::match_bitapScore(std::size_t e, std::size_t x,
 std::unordered_map<wchar_t, std::size_t> diff_match_patch::match_alphabet(
     const std::wstring &pattern) {
   std::unordered_map<wchar_t, std::size_t> s;
-  std::size_t i;
+  std::size_t i = 0;
   for (auto c : pattern) {
     s.emplace(c, 0);
   }
